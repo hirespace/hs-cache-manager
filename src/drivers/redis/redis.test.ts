@@ -121,7 +121,7 @@ describe('RedisDriver', () => {
       const { default: RedisDriver } = await import('./redis');
       const driver = new RedisDriver(createClient());
 
-      // @ts-ignore
+      const spyRun = jest.spyOn(driver, 'run').mockImplementation(async callback => callback())
       const spyGet = jest.spyOn(driver, 'get').mockResolvedValue(cache);
       const spyPut = jest.spyOn(driver, 'put').mockImplementation((_key, value, _expires) => Promise.resolve(value));
 
@@ -130,6 +130,7 @@ describe('RedisDriver', () => {
       const actual = await driver.remember('foo', callback);
 
       expect(actual).toBe(expected);
+      expect(spyRun).toHaveBeenCalled();
       expect(spyGet).toHaveBeenCalledWith('foo');
 
       if (cache === null) {

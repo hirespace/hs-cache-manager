@@ -17,8 +17,8 @@ export default class RedisDriver<Client extends RedisInstance> extends CacheDriv
     });
   }
 
-  public async disconnect(): Promise<void> {
-    void await this.store.quit();
+  public disconnect(): Promise<void> {
+    return this.store.quit();
   }
 
   public async flush(): Promise<void> {
@@ -78,9 +78,11 @@ export default class RedisDriver<Client extends RedisInstance> extends CacheDriv
   }
 
   public async remember<T = any>(key: string | number, callback: () => T, expires: Date | null = null): Promise<T> {
-    const cache = await this.get(key);
+    return this.run(async () => {
+      const cache = await this.get(key);
 
-    return cache !== null ? cache : this.put(key, await callback(), expires);
+      return cache !== null ? cache : this.put(key, await callback(), expires);
+    });
   }
 
   public async remove(key: string | number): Promise<void> {
