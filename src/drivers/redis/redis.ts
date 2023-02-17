@@ -1,3 +1,4 @@
+import { ClientClosedError } from '@redis/client/dist/lib/errors';
 import type { createClient } from 'redis';
 import CacheDriver from '../driver';
 import { Config } from './types';
@@ -17,8 +18,14 @@ export default class RedisDriver<Client extends RedisInstance> extends CacheDriv
     });
   }
 
-  public disconnect(): Promise<void> {
-    return this.store.quit();
+  public async disconnect(): Promise<void> {
+    try {
+      return this.store.quit();
+    } catch (e) {
+      if (!(e instanceof ClientClosedError)) {
+        throw e;
+      }
+    }
   }
 
   public async flush(): Promise<void> {
