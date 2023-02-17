@@ -20,7 +20,7 @@ export default class RedisDriver<Client extends RedisInstance> extends CacheDriv
 
   public async disconnect(): Promise<void> {
     try {
-      return this.store.quit();
+      return await this.store.quit();
     } catch (e) {
       if (!(e instanceof ClientClosedError)) {
         throw e;
