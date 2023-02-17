@@ -200,6 +200,27 @@ describe('RedisDriver', () => {
     });
   });
 
+  describe('setConfig', () => {
+    test('merges the new config with the previous config', async () => {
+      const { default: RedisDriver } = await import('./redis');
+      const driver = new RedisDriver(createClient(), { prefix: 'test' });
+
+      // @ts-ignore
+      expect(driver.config).toEqual({
+        keepAlive: false,
+        prefix: 'test'
+      });
+
+      driver.setConfig({ keepAlive: true });
+
+      // @ts-ignore
+      expect(driver.config).toEqual({
+        keepAlive: true,
+        prefix: 'test'
+      });
+    });
+  });
+
   describe('connect', () => {
     test('connects to Redis if not already connected and return given callback value', async () => {
       const { default: RedisDriver } = await import('./redis');
