@@ -1,4 +1,3 @@
-import { ClientClosedError } from '@redis/client/dist/lib/errors';
 import type { createClient } from 'redis';
 import CacheDriver from '../driver';
 import { Config } from './types';
@@ -9,7 +8,7 @@ export default class RedisDriver<Client extends RedisInstance> extends CacheDriv
   private timer?: NodeJS.Timer;
 
   constructor(client: Client, config: Partial<Config> = {}) {
-    super(client, { maxConnectAttempts: 5, ...config });
+    super(client, { keepAlive: false, ...config });
   }
 
   public async decrement(key: string, count = 1): Promise<number> {
@@ -18,6 +17,10 @@ export default class RedisDriver<Client extends RedisInstance> extends CacheDriv
 
       return count > 1 ? this.store.decrBy(sanatised, count) : this.store.decr(sanatised);
     });
+  }
+
+  public async disconnect(): Promise<void> {
+    void await this.store.quit();
   }
 
   public async flush(): Promise<void> {
@@ -86,7 +89,13 @@ export default class RedisDriver<Client extends RedisInstance> extends CacheDriv
     await this.connect(() => this.store.del(this.key(key)));
   }
 
-  private async connect<T>(callback: () => T, attempt = 1): Promise<T> {
+  public setConfig(config: Partial<Config>): this {
+    this.config = { ...this.config, ...config };
+
+    return this;
+  }
+
+  private async connect<T>(callback: () => T): Promise<T> {
     clearTimeout(this.timer);
 
     if (!this.store.isOpen) {
@@ -95,16 +104,13 @@ export default class RedisDriver<Client extends RedisInstance> extends CacheDriv
 
     try {
       return await callback();
-    } catch (e) {
-      if (e instanceof ClientClosedError && attempt <= this.config.maxConnectAttempts) {
-        return await this.connect(callback, attempt + 1);
-      }
-
-      throw e;
     } finally {
-      this.timer = setTimeout(() => {
-        if (this.store.isOpen) this.store.quit();
-      }, 5e3);
+      /**
+       * If keepAlive is true, you must remember to manually close the connection.
+       */
+      if (!this.config.keepAlive && this.store.isOpen) {
+        void await this.disconnect();
+      }
     }
   }
 }
