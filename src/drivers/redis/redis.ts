@@ -87,6 +87,17 @@ export default class RedisDriver<Client extends RedisInstance> extends CacheDriv
     await this.connect(() => this.store.del(this.key(key)));
   }
 
+  public async run<T>(callback: () => T): Promise<T> {
+    this.config.keepAlive = true;
+
+    try {
+      return await this.connect(callback);
+    } finally {
+      this.config.keepAlive = false;
+      void await this.disconnect();
+    }
+  }
+
   public setConfig(config: Partial<Config>): this {
     this.config = { ...this.config, ...config };
 
