@@ -5,8 +5,6 @@ import { Config } from './types';
 type RedisInstance = ReturnType<typeof createClient>;
 
 export default class RedisDriver<Client extends RedisInstance> extends CacheDriver<Client, Config> {
-  private timer?: NodeJS.Timer;
-
   constructor(client: Client, config: Partial<Config> = {}) {
     super(client, { keepAlive: false, ...config });
   }
@@ -96,8 +94,6 @@ export default class RedisDriver<Client extends RedisInstance> extends CacheDriv
   }
 
   private async connect<T>(callback: () => T): Promise<T> {
-    clearTimeout(this.timer);
-
     if (!this.store.isOpen) {
       void await this.store.connect();
     }
