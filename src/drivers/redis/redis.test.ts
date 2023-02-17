@@ -164,10 +164,44 @@ describe('RedisDriver', () => {
     });
   });
 
+  describe('run', () => {
+    test('opens a connection and runs the callback where all cache layer access uses the same connection', async () => {
+      const { default: RedisDriver } = await import('./redis');
+      const driver = new RedisDriver(createClient());
+
+      // @ts-ignore
+      const spyIsOpen = jest.spyOn(driver.store, 'isOpen', 'get').mockReturnValue(false);
+      // @ts-ignore
+      const spyConnect = jest.spyOn(driver.store, 'connect').mockImplementation(async () => {
+        spyIsOpen.mockReset().mockReturnValue(true);
+      });
+      // @ts-ignore
+      const spyQuit = jest.spyOn(driver.store, 'quit').mockImplementation(async () => {
+        spyIsOpen.mockReset().mockReturnValue(false);
+      });
+      const spyGet = jest.spyOn(driver, 'get').mockResolvedValue(null);
+
+      const callback = jest.fn(async () => {
+        return await Promise.all([
+          driver.get('foo'),
+          driver.get('foo'),
+          driver.get('foo'),
+        ]);
+      });
+
+      await driver.run(callback);
+
+      expect(spyConnect).toHaveBeenCalledTimes(1);
+      expect(spyGet).toHaveBeenCalledTimes(3);
+      // @ts-ignore
+      expect(driver.store.isOpen).toBe(false);
+      expect(callback).toHaveBeenCalled();
+      expect(spyQuit).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('connect', () => {
     test('connects to Redis if not already connected and return given callback value', async () => {
-      jest.useFakeTimers();
-
       const { default: RedisDriver } = await import('./redis');
       const driver = new RedisDriver(createClient());
 
@@ -176,15 +210,42 @@ describe('RedisDriver', () => {
 
       // @ts-ignore
       const spyConnect = jest.spyOn(driver.store, 'connect').mockImplementation(async () => {
-        // @ts-ignore
         spyIsOpen.mockReset().mockReturnValue(true);
-        // driver.store.isOpen = true;
       });
       // @ts-ignore
       const spyQuit = jest.spyOn(driver.store, 'quit').mockImplementation(async () => {
-        // @ts-ignore
         spyIsOpen.mockReset().mockReturnValue(false);
-        // driver.store.isOpen = false;
+      });
+
+      const callback = jest.fn().mockResolvedValue('foo');
+
+      // @ts-ignore
+      await driver.connect(callback);
+
+      expect(spyConnect).toHaveBeenCalled();
+      // @ts-ignore
+      expect(driver.store.isOpen).toBe(false);
+      expect(callback).toHaveBeenCalled();
+      expect(spyQuit).toHaveBeenCalled();
+
+      spyConnect.mockRestore();
+      spyQuit.mockRestore();
+    });
+
+    test('connects to Redis if not already connected and return given callback value and keep the connection open', async () => {
+      const { default: RedisDriver } = await import('./redis');
+      const driver = new RedisDriver(createClient(), { keepAlive: true });
+
+      // @ts-ignore
+      const spyIsOpen = jest.spyOn(driver.store, 'isOpen', 'get').mockReturnValue(false);
+
+      // @ts-ignore
+      const spyConnect = jest.spyOn(driver.store, 'connect').mockImplementation(async () => {
+        spyIsOpen.mockReset().mockReturnValue(true);
+      });
+      // @ts-ignore
+      const spyQuit = jest.spyOn(driver.store, 'quit').mockImplementation(async () => {
+        spyIsOpen.mockReset().mockReturnValue(false);
       });
 
       const callback = jest.fn().mockResolvedValue('foo');
@@ -197,11 +258,7 @@ describe('RedisDriver', () => {
       expect(driver.store.isOpen).toBe(true);
       expect(callback).toHaveBeenCalled();
 
-      jest.runAllTimers();
-
-      expect(spyQuit).toHaveBeenCalled();
-      // @ts-ignore
-      expect(driver.store.isOpen).toBe(false);
+      expect(spyQuit).not.toHaveBeenCalled();
 
       spyConnect.mockRestore();
       spyQuit.mockRestore();
