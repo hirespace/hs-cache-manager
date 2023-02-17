@@ -1,12 +1,15 @@
+import { ClientClosedError } from '@redis/client/dist/lib/errors';
 import type { createClient } from 'redis';
-import CacheDriver from './driver';
+import CacheDriver from '../driver';
 import { Config } from './types';
 
-export default class RedisDriver<Client extends ReturnType<typeof createClient>> extends CacheDriver<Client> {
+type RedisInstance = ReturnType<typeof createClient>;
+
+export default class RedisDriver<Client extends RedisInstance> extends CacheDriver<Client, Config> {
   private timer?: NodeJS.Timer;
 
   constructor(client: Client, config: Partial<Config> = {}) {
-    super(client, config);
+    super(client, { maxConnectAttempts: 5, ...config });
   }
 
   public async decrement(key: string, count = 1): Promise<number> {
@@ -83,7 +86,7 @@ export default class RedisDriver<Client extends ReturnType<typeof createClient>>
     await this.connect(() => this.store.del(this.key(key)));
   }
 
-  private async connect<T>(callback: () => T): Promise<T> {
+  private async connect<T>(callback: () => T, attempt = 1): Promise<T> {
     clearTimeout(this.timer);
 
     if (!this.store.isOpen) {
@@ -92,6 +95,12 @@ export default class RedisDriver<Client extends ReturnType<typeof createClient>>
 
     try {
       return await callback();
+    } catch (e) {
+      if (e instanceof ClientClosedError && attempt < this.config.maxConnectAttempts) {
+        return await this.connect(callback, attempt + 1);
+      }
+
+      throw e;
     } finally {
       this.timer = setTimeout(() => {
         if (this.store.isOpen) this.store.quit();
