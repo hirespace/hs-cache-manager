@@ -96,7 +96,7 @@ export default class RedisDriver<Client extends RedisInstance> extends CacheDriv
     try {
       return await callback();
     } catch (e) {
-      if (e instanceof ClientClosedError && attempt < this.config.maxConnectAttempts) {
+      if (e instanceof ClientClosedError && attempt <= this.config.maxConnectAttempts) {
         return await this.connect(callback, attempt + 1);
       }
 
