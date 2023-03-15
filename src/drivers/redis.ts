@@ -90,12 +90,12 @@ export default class RedisDriver<Client extends ReturnType<typeof createClient>>
       void await this.store.connect();
     }
 
-    try {
-      return await callback();
-    } finally {
-      this.timer = setTimeout(() => {
-        if (this.store.isOpen) this.store.quit();
-      }, 5e3);
-    }
+    const result = await callback();
+
+    this.timer = setTimeout(() => {
+      if (this.store.isOpen) this.store.quit();
+    }, 5e3);
+
+    return result;
   }
 }
