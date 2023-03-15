@@ -1,4 +1,4 @@
-import type { createClient } from 'redis';
+import { ClientClosedError, type createClient } from 'redis';
 import CacheDriver from './driver';
 import { Config } from './types';
 
@@ -92,10 +92,22 @@ export default class RedisDriver<Client extends ReturnType<typeof createClient>>
 
     const result = await callback();
 
-    this.timer = setTimeout(() => {
-      if (this.store.isOpen) this.store.quit();
-    }, 5e3);
+    this.initDisconnect();
 
     return result;
+  }
+
+  private initDisconnect() {
+    this.timer = setTimeout(() => {
+      if (this.store.isOpen) {
+        try {
+          this.store.quit();
+        } catch (e) {
+          if (e instanceof ClientClosedError) return;
+
+          throw e;
+        }
+      }
+    }, 5e3);
   }
 }
