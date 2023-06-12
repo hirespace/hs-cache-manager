@@ -39,7 +39,8 @@ export default abstract class CacheDriver<Store = any> {
   /**
    * Get item from cache.
    */
-  public abstract get<T = any>(key: string | number, fallback?: T): Promisable<T | null>;
+  public abstract get<T>(key: string | number): Promisable<T | null>;
+  public abstract get<T>(key: string | number, fallback: T): Promisable<T>;
 
   /**
    * Return whether item exists in the cache.
@@ -70,10 +71,10 @@ export default abstract class CacheDriver<Store = any> {
   /**
    * Callback return-type should be a JSON stringify-able value.
    */
-  public remember<T = any>(key: string | number, callback: () => T, expires: Date | null = null): Promisable<T> {
+  public remember<T = unknown>(key: string | number, callback: () => T, expires: Date | null = null): Promisable<T> {
     const cache = this.get(key);
 
-    if (cache !== null) return cache;
+    if (cache !== null) return cache as Promisable<T>;
 
     const value = callback();
 
