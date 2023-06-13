@@ -40,7 +40,7 @@ export default abstract class CacheDriver<Store = any> {
    * Get item from cache.
    */
   public abstract get<T>(key: string | number): Promisable<T | null>;
-  public abstract get<T>(key: string | number, fallback: T): Promisable<T>;
+  public abstract get<T, U extends T = T>(key: string | number, fallback: T): Promisable<U>;
 
   /**
    * Return whether item exists in the cache.

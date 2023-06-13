@@ -10,9 +10,9 @@ export default class MapDriver extends CacheDriver<Map<string, Cached>> {
     this.store.clear();
   }
 
-  public get<T = unknown>(key: string): T | null;
-  public get<T = unknown>(key: string, fallback: T): T;
-  public get<T = unknown>(key: string, fallback = null as T) {
+  public get<T>(key: string): T | null;
+  public get<T, U extends T = T>(key: string, fallback: T): U;
+  public get<T>(key: string, fallback = null as T) {
     const cached = this.store.get(this.key(key));
 
     if (!cached) return fallback;

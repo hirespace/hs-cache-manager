@@ -18,8 +18,8 @@ export default class UpstashRedisDriver<Client extends Redis> extends CacheDrive
     await this.store.flushall();
   }
 
-  public async get<T = unknown>(key: string | number): Promise<T | null>;
-  public async get<T = unknown>(key: string | number, fallback: T): Promise<T>;
+  public async get<T>(key: string | number): Promise<T | null>;
+  public async get<T, U extends T = T>(key: string | number, fallback: T): Promise<U>;
   public async get<T = unknown>(key: string | number, fallback: T = null as T) {
     if (await this.has(key)) {
       const cache = await this.store.get(this.key(key));
