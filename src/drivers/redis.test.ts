@@ -89,7 +89,7 @@ describe('RedisDriver', () => {
   });
 
   describe('put', () => {
-    test.each([null as unknown as Date, new Date()])('%# stores an item in the cache with the given key', async (expires) => {
+    test.each([null, new Date()])('%# stores an item in the cache with the given key', async (expires) => {
       const { default: RedisDriver } = await import('./redis');
       const driver = new RedisDriver(createClient());
 

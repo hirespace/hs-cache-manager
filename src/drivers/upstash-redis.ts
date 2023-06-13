@@ -54,7 +54,7 @@ export default class UpstashRedisDriver<Client extends Redis> extends CacheDrive
     return count > 1 ? this.store.incrby(sanatised, count) : this.store.incr(sanatised);
   }
 
-  public async put<T>(key: string | number, value: T, date: Date = null as unknown as Date): Promise<T> {
+  public async put<T>(key: string | number, value: T, date: Date | null = null): Promise<T> {
     const sanatised = this.key(key);
 
     await this.store.set(sanatised, JSON.stringify(value));

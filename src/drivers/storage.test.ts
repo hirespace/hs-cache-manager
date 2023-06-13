@@ -79,7 +79,7 @@ describe.each<[string, StorageDriver]>([
 
     test.each([
       addMinutes(Date.now(), 5),
-      null as unknown as Date,
+      null,
     ])('%# returns "true" if key exists in cache and item has not expired', (expires) => {
       expect(driver.has('foo')).toBe(false);
 
