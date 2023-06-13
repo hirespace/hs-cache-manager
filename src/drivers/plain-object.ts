@@ -10,9 +10,9 @@ export default class PlainObjectDriver extends CacheDriver<Record<string, Cached
     this.store = {};
   }
 
-  public get<T>(key: string): T | null;
-  public get<T>(key: string, fallback: T): T;
-  public get<T>(key: string, fallback: T = null as T) {
+  public get<T = unknown>(key: string): T | null;
+  public get<T = unknown>(key: string, fallback: T): T;
+  public get<T = unknown>(key: string, fallback: T = null as T) {
     return this.has(key) ? this.store[this.key(key)].value : fallback;
   }
 
@@ -22,7 +22,7 @@ export default class PlainObjectDriver extends CacheDriver<Record<string, Cached
     return !!this.store[sanatised] && !this.expired(this.store[sanatised]);
   }
 
-  public put<T = any>(key: string, value: T, expires: Date | null = null): T {
+  public put<T>(key: string, value: T, expires: Date = null as unknown as Date): T {
     this.store[this.key(key)] = { expires, key, value };
 
     return value;

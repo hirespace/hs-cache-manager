@@ -87,7 +87,7 @@ describe('UpstashRedisDriver', () => {
   });
 
   describe('put', () => {
-    test.each([null, new Date()])('%# stores an item in the cache with the given key', async (expires) => {
+    test.each([null as unknown as Date, new Date()])('%# stores an item in the cache with the given key', async (expires) => {
       const { default: UpstashRedisDriver } = await import('./upstash-redis');
       const driver = new UpstashRedisDriver(client);
 

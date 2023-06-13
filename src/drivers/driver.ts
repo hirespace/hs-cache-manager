@@ -66,21 +66,25 @@ export default abstract class CacheDriver<Store = any> {
    * Put an item in the cache.
    * Optionally set cache expires at timestamp.
    */
-  public abstract put<T = any>(key: string | number, value: T, expires?: Date | null): Promisable<T>;
+  public abstract put<T = any>(key: string | number, value: T, expires?: Date): Promisable<T>;
 
   /**
    * Callback return-type should be a JSON stringify-able value.
    */
-  public remember<T = unknown>(key: string | number, callback: () => T, expires: Date | null = null): Promisable<T> {
-    const cache = this.get(key);
+  public remember<T = unknown>(key: string | number, callback: () => T, expires: Date = null as unknown as Date): Promisable<T> {
+    const cache = this.get<T>(key);
 
-    if (cache !== null) return cache as Promisable<T>;
+    const handle = (result: T | null): Promisable<T> => {
+      if (result !== null) return result;
 
-    const value = callback();
+      const value = callback();
 
-    return isPromise(value)
-      ? value.then(resolved => this.put(key, resolved, expires)) as Promise<T>
-      : this.put(key, value, expires) as T;
+      return isPromise(value)
+        ? value.then(resolved => this.put(key, resolved, expires))
+        : this.put(key, value, expires);
+    };
+
+    return isPromise(cache) ? cache.then(handle) : handle(cache);
   }
 
   /**

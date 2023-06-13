@@ -61,7 +61,7 @@ describe('MapDriver', () => {
   });
 
   describe('put', () => {
-    test.each([null, new Date()])('stores an item in the cache', (expires) => {
+    test.each([null as unknown as Date, new Date()])('stores an item in the cache', (expires) => {
       const cached = driver.put('foo', 'bar', expires);
 
       expect(cached).toBe('bar');
