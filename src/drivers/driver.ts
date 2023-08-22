@@ -2,7 +2,7 @@
 import isPromise from '../support/is-promise';
 import { Config, Promisable } from './types';
 
-export default abstract class CacheDriver<Store = any> {
+export default abstract class CacheDriver<Store> {
   protected config: Config;
 
   protected store: Store;
