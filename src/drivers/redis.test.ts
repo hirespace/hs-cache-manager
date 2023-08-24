@@ -98,18 +98,14 @@ describe('RedisDriver', () => {
       // @ts-ignore
       const spySet = jest.spyOn(driver.api(), 'set').mockResolvedValue('OK');
       // @ts-ignore
-      const spyExpireAt = jest.spyOn(driver.api(), 'expireAt').mockResolvedValue('OK');
 
       const actual = await driver.put('foo', 'bar', expires);
 
       expect(actual).toBe('bar');
-      expect(spySet).toHaveBeenCalledWith('foo', JSON.stringify('bar'));
-
-      if (expires) expect(spyExpireAt).toHaveBeenCalledWith('foo', Math.floor(expires.getTime() / 1000));
+      expect(spySet).toHaveBeenCalledWith('foo', JSON.stringify('bar'), expires ? { PXAT: expires.getTime() } : {});
 
       spyConnect.mockRestore();
       spySet.mockRestore();
-      spyExpireAt.mockRestore();
     });
   });
 
