@@ -63,13 +63,11 @@ export default class RedisDriver<Client extends ReturnType<typeof createClient>>
     });
   }
 
-  public async put<T>(key: string | number, value: T, date: Date | null = this.config.ttl): Promise<T> {
+  public async put<T>(key: string | number, value: T, expires: Date | null = this.config.ttl): Promise<T> {
     return this.connect(async () => {
       const sanatised = this.key(key);
 
-      await this.store.set(sanatised, JSON.stringify(value));
-
-      if (date) await this.store.expireAt(sanatised, Math.floor(date.getTime() / 1000));
+      void await this.store.set(sanatised, JSON.stringify(value), expires ? { PXAT: expires.getTime() } : {});
 
       return value;
     });
