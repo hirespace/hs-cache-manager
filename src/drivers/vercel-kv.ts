@@ -1,5 +1,6 @@
 import type { createClient } from '@vercel/kv';
-import { Config } from './types';
+import valueOf from '../support/value-of';
+import { Config, Promisable } from './types';
 import CacheDriver from './driver';
 
 export default class VercelKv<Client extends ReturnType<typeof createClient>> extends CacheDriver<Client> {
@@ -13,14 +14,15 @@ export default class VercelKv<Client extends ReturnType<typeof createClient>> ex
 
   public async get<T>(key: string): Promise<T | null>;
   public async get<T, U extends T = T>(key: string, fallback: T): Promise<U>;
+  public async get<T, U extends T = T>(key: string, fallback: () => Promisable<T>): Promise<U>;
   public async get<T>(key: string, fallback: T = null as unknown as T): Promise<T | null> {
     // All values will be a string as we JSON.stringify them before storing.
     const cache = await this.store.get<string>(this.key(key));
 
     try {
-      return cache ? JSON.parse(cache) : fallback;
+      return cache ? JSON.parse(cache) : valueOf(fallback);
     } catch (e) {
-      return fallback;
+      return valueOf(fallback);
     }
   }
 

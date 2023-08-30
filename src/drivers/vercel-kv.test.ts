@@ -57,6 +57,24 @@ describe('RedisDriver', () => {
       spyApiGet.mockRestore();
     });
 
+    test('returns given fallback callback value if given key is not found', async () => {
+      const { default: VercelKvDriver } = await import('./vercel-kv');
+      const driver = new VercelKvDriver(createClient(config));
+
+      // @ts-ignore
+      // const spyConnect = jest.spyOn(driver, 'connect').mockImplementation(callback => callback());
+      // const spyHas = jest.spyOn(driver, 'has').mockResolvedValue(false);
+      const spyApiGet = jest.spyOn(driver.api(), 'get').mockResolvedValue(null);
+      const fallback = jest.fn(async () => 'baz');
+
+      expect(await driver.get('foo', fallback)).toBe('baz');
+      expect(fallback).toHaveBeenCalled();
+
+      // spyConnect.mockRestore();
+      // spyHas.mockRestore();
+      spyApiGet.mockRestore();
+    });
+
     test('returns cache for given key', async () => {
       const expected = { test: true };
 
@@ -68,8 +86,10 @@ describe('RedisDriver', () => {
       // const spyHas = jest.spyOn(driver, 'has').mockResolvedValue(true);
       // @ts-ignore
       const spyApiGet = jest.spyOn(driver.api(), 'get').mockResolvedValue(JSON.stringify(expected));
+      const fallback = jest.fn(async () => 'bar');
 
-      expect(await driver.get('foo')).toEqual(expected);
+      expect(await driver.get('foo', fallback)).toEqual(expected);
+      expect(fallback).not.toHaveBeenCalled();
 
       // spyConnect.mockRestore();
       // spyHas.mockRestore();
