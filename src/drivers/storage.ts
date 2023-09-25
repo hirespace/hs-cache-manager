@@ -35,8 +35,12 @@ class StorageDriver extends CacheDriver<Storage> {
     return !!cache && !this.expired(JSON.parse(cache));
   }
 
-  public put<T>(key: string, value: T, expires: Date | null = this.config.ttl): T {
-    this.store.setItem(this.key(key), JSON.stringify({ expires: expires ? expires.getTime() : null, key, value }));
+  public put<T>(key: string, value: T, expires: Date | null = null): T {
+    this.store.setItem(this.key(key), JSON.stringify({
+      expires: expires ? this.expires(expires).getTime() : null,
+      key,
+      value
+    }));
 
     return value;
   }
