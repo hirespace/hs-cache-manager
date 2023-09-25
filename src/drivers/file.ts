@@ -47,7 +47,11 @@ export default class FileDriver extends CacheDriver<string> {
     void this.write(store => {
       return {
         ...store,
-        [this.key(key)]: { expires: expires ? this.expires(expires).getTime() : null, key, value }
+        [this.key(key)]: {
+          expires: expires ? this.expires(expires).getTime() : null,
+          key,
+          value
+        }
       };
     });
 
