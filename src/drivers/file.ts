@@ -9,13 +9,11 @@ export default class FileDriver extends CacheDriver<string> {
   constructor(path: string, config: Partial<Config> = {}) {
     super(path, config);
 
-    const file = fs.openSync(path, 'w');
-
     if (!fs.existsSync(path)) {
-      fs.writeSync(file, JSON.stringify({}));
+      const file = fs.openSync(path, 'w');
+      fs.writeSync(file, JSON.stringify({}), null, 'utf-8');
+      fs.closeSync(file);
     }
-
-    fs.closeSync(file);
   }
 
   public flush(): void {
@@ -72,10 +70,10 @@ export default class FileDriver extends CacheDriver<string> {
   }
 
   private write(callback: (store: Partial<Record<string, Cached>>) => Partial<Record<string, Cached>>) {
-    const file = fs.openSync(this.store, 'w');
     const store = callback(this.read());
 
-    fs.writeSync(file, JSON.stringify(store));
+    const file = fs.openSync(this.store, 'w');
+    fs.writeSync(file, JSON.stringify(store), null, 'utf-8');
     fs.closeSync(file);
 
     return store;
