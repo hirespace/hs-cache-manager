@@ -59,7 +59,7 @@ export default class UpstashRedisDriver<Client extends Redis> extends CacheDrive
     await this.store.set(
       this.key(key),
       JSON.stringify(value),
-      expires ? { pxat: Math.floor(this.expires(expires).getTime() / 1000) } : {}
+      expires ? { pxat: this.expires(expires).getTime() } : {}
     );
 
     return value;
