@@ -1,6 +1,8 @@
 import valueOf from '../support/value-of';
 import CacheDriver from './driver';
-import { Cached, Config } from './types';
+import type { Cached as BaseCached, Config } from './types';
+
+type Cached = Omit<BaseCached, 'expires'> & { expires: number | null };
 
 class StorageDriver extends CacheDriver<Storage> {
   constructor(protected store: Storage, config: Partial<Config> = {}) {
@@ -40,7 +42,7 @@ class StorageDriver extends CacheDriver<Storage> {
       expires: expires ? this.expires(expires).getTime() : null,
       key,
       value
-    }));
+    } as Cached));
 
     return value;
   }
