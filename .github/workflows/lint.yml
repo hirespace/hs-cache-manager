@@ -27,5 +27,5 @@ jobs:
         if: steps.node-modules.outputs.cache-hit != 'true'
         run: npm i
 
-      - name: Run check TypeScript
+      - name: Lint
         run: npm run build
