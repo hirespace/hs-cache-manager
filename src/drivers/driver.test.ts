@@ -166,16 +166,14 @@ describe('driver', () => {
       expect(driver.expires(expires)).toBe(expires);
     });
 
-    test.each([
-      [60],
-      [() => 60]
-    ])('%# returns date of expiration if null is given and ttl is set', (seconds) => {
+    test.each<[number, number | (() => Date)]>([
+      [60000, 60],
+      [new Date(2023, 9, 4, 10, 33).getTime(), () => new Date(2023, 9, 4, 10, 33)]
+    ])('%# returns date of expiration if null is given and ttl is set', (expected, seconds) => {
       // @ts-ignore
       driver.config.ttl = seconds;
 
-      const expires = new Date();
-      const spyNow = jest.spyOn(Date, 'now').mockImplementation(() => expires.getTime());
-      const expected = expires.getTime() + (valueOf(seconds) * 1000);
+      const spyNow = jest.spyOn(Date, 'now').mockImplementation(() => 0);
 
       // @ts-ignore
       expect(driver.expires(null).getTime()).toBe(expected);
