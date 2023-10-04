@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any,class-methods-use-this */
 import isPromise from '../support/is-promise';
+import valueOf from '../support/value-of';
 import { Config, Promisable } from './types';
 
 export default abstract class CacheDriver<Store> {
@@ -97,7 +98,7 @@ export default abstract class CacheDriver<Store> {
   protected expires(at: Date): Date;
   protected expires(at: Date | null): Date | null;
   protected expires(at: Date | null) {
-    return at ?? (this.config.ttl ? new Date(Date.now() + (this.config.ttl * 1000)) : null);
+    return at ?? (this.config.ttl ? new Date(Date.now() + (valueOf(this.config.ttl) * 1000)) : null);
   }
 
   protected key(key: string | number): string {

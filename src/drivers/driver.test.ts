@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment,@typescript-eslint/no-explicit-any,class-methods-use-this,@typescript-eslint/no-unused-vars */
+import valueOf from '../support/value-of';
 import CacheDriver from './driver';
 import { Promisable } from './types';
 
@@ -165,14 +166,16 @@ describe('driver', () => {
       expect(driver.expires(expires)).toBe(expires);
     });
 
-    test('returns date of expiration if null is given and ttl is set', () => {
-      const seconds = 60;
+    test.each([
+      [60],
+      [() => 60]
+    ])('%# returns date of expiration if null is given and ttl is set', (seconds) => {
       // @ts-ignore
       driver.config.ttl = seconds;
 
       const expires = new Date();
       const spyNow = jest.spyOn(Date, 'now').mockImplementation(() => expires.getTime());
-      const expected = expires.getTime() + (seconds * 1000);
+      const expected = expires.getTime() + (valueOf(seconds) * 1000);
 
       // @ts-ignore
       expect(driver.expires(null).getTime()).toBe(expected);
