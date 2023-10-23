@@ -1,6 +1,6 @@
 import type CacheDriver from './drivers/driver';
 
-interface Driver<Drivers extends Record<string, CacheDriver<unknown>>, Fallback extends keyof Drivers> {
+export interface Driver<Drivers extends Record<string, CacheDriver<unknown>>, Fallback extends keyof Drivers> {
   (): Drivers[Fallback],
   <Store extends keyof Drivers>(store: Store): Drivers[Store],
 }
