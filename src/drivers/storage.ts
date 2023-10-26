@@ -28,13 +28,13 @@ class StorageDriver extends CacheDriver<Storage> {
   public get<T>(key: string, fallback: T = null as unknown as T) {
     if (this.has(key)) {
       try {
-        const cache: Cached = JSON.parse(this.store.getItem(this.key(key)) as string);
+        const { expires, value }: Cached = JSON.parse(this.store.getItem(this.key(key)) as string);
 
         return this.memory?.remember(
           key,
-          () => cache.value,
-          cache.expires ? new Date(cache.expires) : null
-        ) ?? cache.value;
+          () => value,
+          expires ? new Date(expires) : null
+        ) ?? value;
       } catch (error) {
         return valueOf(fallback);
       }
