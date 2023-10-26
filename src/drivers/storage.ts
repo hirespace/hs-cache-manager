@@ -1,16 +1,25 @@
 import valueOf from '../support/value-of';
 import CacheDriver from './driver';
-import type { Cached as BaseCached, Config } from './types';
+import type { Cached as BaseCached, Config as BaseConfig } from './types';
+import MapDriver from './map';
 
 type Cached = Omit<BaseCached, 'expires'> & { expires: number | null };
+type Config = BaseConfig & { enableMemory?: boolean };
 
 class StorageDriver extends CacheDriver<Storage> {
+  private memory?: MapDriver;
+
   constructor(protected store: Storage, config: Partial<Config> = {}) {
     super(store, config);
+
+    if (config.enableMemory) {
+      this.memory = new MapDriver(new Map(), config);
+    }
   }
 
   public flush(): void {
     this.store.clear();
+    this.memory?.flush();
   }
 
   public get<T>(key: string): T | null;
@@ -19,10 +28,13 @@ class StorageDriver extends CacheDriver<Storage> {
   public get<T>(key: string, fallback: T = null as unknown as T) {
     if (this.has(key)) {
       try {
-        const cache = this.store.getItem(this.key(key)) as string;
-        const { value } = JSON.parse(cache);
+        const cache: Cached = JSON.parse(this.store.getItem(this.key(key)) as string);
 
-        return value;
+        return this.memory?.remember(
+          key,
+          () => cache.value,
+          cache.expires ? new Date(cache.expires) : null
+        ) ?? cache.value;
       } catch (error) {
         return valueOf(fallback);
       }
@@ -38,11 +50,14 @@ class StorageDriver extends CacheDriver<Storage> {
   }
 
   public put<T>(key: string, value: T, expires: Date | null = null): T {
-    this.store.setItem(this.key(key), JSON.stringify({
+    const cached: Cached = {
       expires: expires ? this.expires(expires).getTime() : null,
       key,
       value
-    } as Cached));
+    };
+
+    this.store.setItem(this.key(key), JSON.stringify(cached));
+    this.memory?.put(key, cached);
 
     return value;
   }
@@ -102,6 +117,7 @@ class StorageDriver extends CacheDriver<Storage> {
 
   public remove(key: string): void {
     this.store.removeItem(this.key(key));
+    this.memory?.remove(key);
   }
 
   /**
