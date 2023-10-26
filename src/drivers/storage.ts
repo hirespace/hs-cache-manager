@@ -57,7 +57,7 @@ class StorageDriver extends CacheDriver<Storage> {
     };
 
     this.store.setItem(this.key(key), JSON.stringify(cached));
-    this.memory?.put(key, cached);
+    this.memory?.put(key, cached, expires);
 
     return value;
   }
