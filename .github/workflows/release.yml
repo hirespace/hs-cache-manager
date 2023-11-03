@@ -1,0 +1,30 @@
+name: Create new release
+
+on:
+  registry_package:
+    types: [ published ]
+
+env:
+  GH_TOKEN: ${{ github.token }}
+  VERSION: ${{ github.event.registry_package.package_version.version }}
+
+jobs:
+  release:
+    if: ${{ ! contains(github.event.registry_package.package_version.version, 'beta') }}
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Create release
+        run: echo "RELEASE_URL=`gh release create ${{ env.VERSION }} --generate-notes`" >> "$GITHUB_ENV"
+
+      - name: Notify release
+        uses: rtCamp/action-slack-notify@v2
+        if: success()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_BADASS_INTERNET_PEEPS_WEBHOOK }}
+          SLACK_COLOR: success
+          SLACK_TITLE: "New release of `@hirespace/hs-cache-manager@${{ env.VERSION }}`"
+          SLACK_MESSAGE: "View release: ${{ env.RELEASE_URL }}"
