@@ -1,6 +1,6 @@
 {
   "name": "@hirespace/hs-cache-manager",
-  "version": "3.2.0",
+  "version": "3.2.1",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "keywords": [
@@ -34,12 +34,24 @@
     "redis": "^4.1.0"
   },
   "peerDependenciesMeta": {
-    "@upstash/redis": { "optional": true },
-    "@vercel/kv": { "optional": true },
-    "cookie": { "optional": true },
-    "cookies-next": { "optional": true },
-    "crypto-js": { "optional": true },
-    "redis": { "optional": true }
+    "@upstash/redis": {
+      "optional": true
+    },
+    "@vercel/kv": {
+      "optional": true
+    },
+    "cookie": {
+      "optional": true
+    },
+    "cookies-next": {
+      "optional": true
+    },
+    "crypto-js": {
+      "optional": true
+    },
+    "redis": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/crypto-js": "^4.1.1",
