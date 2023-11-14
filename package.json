@@ -25,13 +25,21 @@
     "prepublish:beta": "npm version prerelease --preid beta --allow-same-version",
     "publish:beta": "npm publish --scope @hirespace --tag beta"
   },
-  "optionalDependencies": {
+  "peerDependencies": {
     "@upstash/redis": "^1.20.0",
     "@vercel/kv": "^0.2.2",
     "cookie": "^0.5.0",
     "cookies-next": "^2.1.1",
     "crypto-js": "^4.1.1",
     "redis": "^4.1.0"
+  },
+  "peerDependenciesMeta": {
+    "@upstash/redis": { "optional": true },
+    "@vercel/kv": { "optional": true },
+    "cookie": { "optional": true },
+    "cookies-next": { "optional": true },
+    "crypto-js": { "optional": true },
+    "redis": { "optional": true }
   },
   "devDependencies": {
     "@types/crypto-js": "^4.1.1",
