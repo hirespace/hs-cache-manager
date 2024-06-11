@@ -180,6 +180,7 @@ describe('RedisDriver', () => {
 
   describe('connect', () => {
     test('connects to Redis if not already connected and return given callback value', async () => {
+      // @ts-ignore
       jest.useFakeTimers();
 
       const { default: RedisDriver } = await import('./redis');
