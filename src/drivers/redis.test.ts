@@ -179,9 +179,13 @@ describe('RedisDriver', () => {
   });
 
   describe('connect', () => {
-    test('connects to Redis if not already connected and return given callback value', async () => {
-      // @ts-ignore
-      jest.useFakeTimers();
+    test('connects to Redis if not already connected and return given callback value', async () => {      
+      jest.useFakeTimers({
+        advanceTimers: 0,
+        legacyFakeTimers: false,
+        now: new Date('2020-01-01'),
+        timerLimit: 1000,
+      });
 
       const { default: RedisDriver } = await import('./redis');
       const driver = new RedisDriver(createClient());
@@ -212,12 +216,14 @@ describe('RedisDriver', () => {
       expect(driver.store.isOpen).toBe(true);
       expect(callback).toHaveBeenCalled();
 
-      jest.runAllTimers();
+      // Fast forward time to ensure all set timeouts are executed
+      jest.advanceTimersByTime(60_000); // Advance time by a minute
 
       expect(spyQuit).toHaveBeenCalled();
       // @ts-ignore
       expect(driver.store.isOpen).toBe(false);
 
+      jest.useRealTimers();
       spyConnect.mockRestore();
       spyQuit.mockRestore();
     });
