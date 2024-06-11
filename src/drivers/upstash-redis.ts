@@ -56,11 +56,15 @@ export default class UpstashRedisDriver<Client extends Redis> extends CacheDrive
   }
 
   public async put<T>(key: string | number, value: T, expires: Date | null = null): Promise<T> {
-    await this.store.set(
-      this.key(key),
-      JSON.stringify(value),
-      expires ? { pxat: this.expires(expires).getTime() } : {}
-    );
+    try {
+      await this.store.set(
+        this.key(key),
+        JSON.stringify(value),
+        expires ? { pxat: this.expires(expires).getTime() } : {}
+      );
+    } catch (error) {
+      console.error(error);
+    }
 
     return value;
   }

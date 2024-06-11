@@ -31,11 +31,15 @@ export default class VercelKv<Client extends ReturnType<typeof createClient>> ex
   }
 
   public async put<T>(key: string | number, value: T, expires: Date | null = null): Promise<T> {
-    void await this.store.set(
-      this.key(key),
-      JSON.stringify(value),
-      expires ? { pxat: this.expires(expires).getTime() } : {}
-    );
+    try {
+      void await this.store.set(
+        this.key(key),
+        JSON.stringify(value),
+        expires ? { pxat: this.expires(expires).getTime() } : {}
+      );
+    } catch (error) {
+      console.error(error);
+    }
 
     return value;
   }
