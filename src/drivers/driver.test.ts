@@ -129,6 +129,23 @@ describe('driver', () => {
       spyPut.mockRestore();
     });
 
+    test('if the callback value gives null, then return the fallback value', () => {
+      const spyGet = jest.spyOn(driver, 'get').mockReturnValue(null);
+      const spyPut = jest.spyOn(driver, 'put');
+
+      const callback = jest.fn().mockReturnValue(null);
+
+      const actual = driver.remember('foo', callback, null, 'fizz');
+
+      expect(actual).toBe('fizz');
+      expect(spyGet).toHaveBeenCalledWith('foo');
+      expect(spyPut).not.toHaveBeenCalled();
+      expect(callback).toHaveBeenCalled();
+
+      spyGet.mockRestore();
+      spyPut.mockRestore();
+    });
+
     test('caches the callback value when result is a "Promise" if key does not exist', async () => {
       const spyGet = jest.spyOn(driver, 'get').mockReturnValue(null);
       const spyPut = jest.spyOn(driver, 'put');

@@ -65,6 +65,11 @@ const expires = cache().remember('cache.key', () => {
   return insufferablySlowFunction();
 }, addHours(Date.now(), 24));
 
+// Cache result for 24 hours, and if there is an error then don't save anything, catch the error and provide the fallback value to the code.
+const fallback = cache().remember('cache.key', () => {
+  return insufferablySlowFunction();
+}, addHours(Date.now(), 24), []);
+
 // Cache result indefinitely using secondary driver.
 const swapDriver = cache('secondary').remember('cache.key', () => {
   return insufferablySlowFunction();
