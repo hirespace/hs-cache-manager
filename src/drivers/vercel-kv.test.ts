@@ -1,6 +1,17 @@
 import { createClient } from '@vercel/kv';
 import type { RedisConfigNodejs } from '@upstash/redis';
 
+jest.mock('@vercel/kv', () => ({
+  createClient: jest.fn().mockImplementation(() => ({
+    flushall: jest.fn(),
+    exists: jest.fn(),
+    get: jest.fn(),
+    set: jest.fn(),
+    expireat: jest.fn(),
+    del: jest.fn()
+  }))
+}));
+
 const config: RedisConfigNodejs = { token: '', url: '' };
 
 describe('RedisDriver', () => {
@@ -173,17 +184,13 @@ describe('RedisDriver', () => {
       const { default: VercelKvDriver } = await import('./vercel-kv');
       const driver = new VercelKvDriver(createClient(config));
 
+      const mockDel = jest.fn().mockResolvedValue(undefined);
       // @ts-ignore
-      // const spyConnect = jest.spyOn(driver, 'connect').mockImplementation(callback => callback());
-      // @ts-ignore
-      const spyDel = jest.spyOn(driver.api(), 'del').mockImplementation();
+      driver.api().del = mockDel;
 
       await driver.remove('foo');
 
-      expect(spyDel).toHaveBeenCalledWith('foo');
-
-      // spyConnect.mockRestore();
-      spyDel.mockRestore();
+      expect(mockDel).toHaveBeenCalledWith('foo');
     });
   });
 });

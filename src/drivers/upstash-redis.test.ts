@@ -1,5 +1,16 @@
 import { Redis as Client } from '@upstash/redis';
 
+jest.mock('@upstash/redis', () => ({
+  Redis: jest.fn().mockImplementation(() => ({
+    flushall: jest.fn(),
+    exists: jest.fn(),
+    get: jest.fn(),
+    set: jest.fn(),
+    expireat: jest.fn(),
+    del: jest.fn()
+  }))
+}));
+
 describe('UpstashRedisDriver', () => {
 
   let client: Client;
@@ -163,14 +174,13 @@ describe('UpstashRedisDriver', () => {
       const { default: UpstashRedisDriver } = await import('./upstash-redis');
       const driver = new UpstashRedisDriver(client);
 
+      const mockDel = jest.fn().mockResolvedValue(undefined);
       // @ts-ignore
-      const spyDel = jest.spyOn(driver.api(), 'del').mockImplementation();
+      driver.api().del = mockDel;
 
       await driver.remove('foo');
 
-      expect(spyDel).toHaveBeenCalledWith('foo');
-
-      spyDel.mockRestore();
+      expect(mockDel).toHaveBeenCalledWith('foo');
     });
   });
 
