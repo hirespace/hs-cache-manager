@@ -1,6 +1,6 @@
 {
   "name": "@hirespace/hs-cache-manager",
-  "version": "3.6.0",
+  "version": "3.6.1",
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -13,6 +13,10 @@
       },
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
+    },
+    "./browser": {
+      "types": "./dist/browser.d.mts",
+      "import": "./dist/browser.browser.mjs"
     }
   },
   "keywords": [
