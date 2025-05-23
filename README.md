@@ -25,17 +25,45 @@ Install the package via `npm`.
 npm i @hirespace/hs-cache-manager
 ```
 
+## Browser Compatibility
+
+This library supports both Node.js and browser environments. However, when using in browsers (like with Vite, Webpack, etc.), you might encounter a `Buffer is not defined` error. This happens because some drivers (like `RedisDriver`) use Node.js-specific dependencies.
+
+**Solution**: The library automatically provides a browser-compatible build that only includes browser-safe drivers. Modern bundlers will automatically use the browser version.
+
+**Browser-compatible drivers:**
+- `PlainObjectDriver` - In-memory object storage
+- `MapDriver` - JavaScript Map storage  
+- `StorageDriver` - localStorage/sessionStorage
+- `NextCookieDriver` - Cookie-based storage for Next.js
+
+**Server-only drivers (not included in browser build):**
+- `RedisDriver` - Requires Node.js Redis client
+- `FileDriver` - Requires Node.js filesystem
+- `UpstashRedisDriver` - Server-optimized
+- `VercelKvDriver` - Server-optimized
+
+If you need to explicitly import the browser version:
+
+```typescript
+// Explicit browser import (usually not needed)
+import { register, PlainObjectDriver, MapDriver, StorageDriver } from '@hirespace/hs-cache-manager/browser';
+```
+
 ## Usage
 
 ```typescript
-// cache.ts
+// cache.ts - Browser-friendly example
 import register, { 
   PlainObjectDriver,
   MapDriver,
   StorageDriver,
-  RedisDriver,
-  UpstashRedisDriver,
-  VercelKvDriver
+  NextCookieDriver,
+  // Server-only drivers (include only in Node.js environments):
+  // RedisDriver,
+  // UpstashRedisDriver,
+  // VercelKvDriver,
+  // FileDriver
 } from '@hirespace/hs-cache-manager';
 
 /**
@@ -48,41 +76,12 @@ const cache = register({
   map: new MapDriver(),
   localStorage: new StorageDriver(window.localStorage),
   sessionStorage: new StorageDriver(window.sessionStorage),
+  // In server environments, you can also add:
+  // redis: new RedisDriver(redisClient),
+  // upstash: new UpstashRedisDriver(upstashClient),
 }, 'main');
 
 export default cache;
-```
-
-```typescript
-// example.ts
-import insufferablySlowFunction from 'third-party';
-import addHours from 'date-fns/addHours';
-import cache from './cache';
-
-// Cache result indefinitely.
-const standard = cache().remember('cache.key', () => {
-  return insufferablySlowFunction();
-});
-
-// Cache result for 24 hours.
-const expires = cache().remember('cache.key', () => {
-  return insufferablySlowFunction();
-}, addHours(Date.now(), 24));
-
-// Cache result for 24 hours, and if there is an error then don't save anything, catch the error and provide the fallback value to the code.
-const fallback = cache().remember('cache.key', () => {
-  return insufferablySlowFunction();
-}, addHours(Date.now(), 24), []);
-
-// Cache result indefinitely using secondary driver.
-const swapDriver = cache('secondary').remember('cache.key', () => {
-  return insufferablySlowFunction();
-});
-
-// Supports `async` callbacks.
-const asynchrounous = await cache().remember('cache.key', async () => {
-  return insufferablySlowFunction();
-});
 ```
 
 ### [Config](./src/drivers/types/config.ts)
