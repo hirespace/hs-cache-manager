@@ -1,8 +1,16 @@
 {
   "name": "@hirespace/hs-cache-manager",
-  "version": "3.4.0",
-  "main": "dist/index.js",
+  "version": "3.5.1",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
   "keywords": [
     "browser",
     "cache",
@@ -19,7 +27,7 @@
     "lint": "eslint 'src/**' --ext .ts --quiet",
     "clean": "rm -rf ./dist",
     "prebuild": "npm run clean && npm run test && npm run lint",
-    "build": "tsc",
+    "build": "tsup",
     "build:watch": "npm run build -- --watch",
     "prepublishOnly": "npm run build",
     "prepublish:beta": "npm version prerelease --preid beta --allow-same-version",
@@ -63,6 +71,7 @@
     "jest": "^28.1.1",
     "jest-environment-jsdom": "^28.1.1",
     "ts-jest": "^28.0.5",
+    "tsup": "^8.5.0",
     "typescript": "^5.2.2"
   },
   "publishConfig": {

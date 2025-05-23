@@ -16,23 +16,27 @@ Any others you'll have to write yourself, feel free to open a PR if you want to 
 Create/add registry scope to your `.npmrc` file.
 
 ```
-@jaspargupta:registry=https://npm.pkg.github.com/
+@hirespace:registry=https://npm.pkg.github.com/
 ```
 
 Install the package via `npm`.
 
 ```
-npm i @jaspargupta/cache-manager
+npm i @hirespace/hs-cache-manager
 ```
 
 ## Usage
 
 ```typescript
 // cache.ts
-import register from '@jaspargupta/cache-manager';
-import PlainObjectDriver from '@jaspargupta/cache-manager/dist/drivers/plain-object';
-import MapDriver from '@jaspargupta/cache-manager/dist/drivers/map';
-import StorageDriver from './@jaspargupta/cache-manager/dist/drivers/storage';
+import register, { 
+  PlainObjectDriver,
+  MapDriver,
+  StorageDriver,
+  RedisDriver,
+  UpstashRedisDriver,
+  VercelKvDriver
+} from '@hirespace/hs-cache-manager';
 
 /**
  * Create your cache manager by registering cache drivers.
@@ -109,7 +113,7 @@ If you want to use the `RedisDriver` you'll have to `npm i redis` and create a [
 
 ```typescript
 import { createClient } from 'redis';
-import RedisDriver from '@jaspargupta/cache-manager/dist/drivers/redis';
+import { RedisDriver } from '@hirespace/hs-cache-manager';
 
 const client = createClient();
 
@@ -122,7 +126,7 @@ Each driver extends the `CacheDriver` base class, write the implementation for e
 
 ```typescript
 // my-cache-driver.ts
-import CacheDriver from '@jaspargupta/cache-manager/dist/drivers/driver';
+import { CacheDriver } from '@hirespace/hs-cache-manager';
 
 export default class MyCacheDriver extends CacheDriver {
   public flush() {
