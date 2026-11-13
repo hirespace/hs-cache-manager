@@ -1,6 +1,7 @@
 export { default as CacheDriver } from './drivers/driver';
 export type { Cached, Config } from './drivers/types';
 export { default, type Driver } from './register';
+export { default as CacheTimeoutError } from './support/cache-timeout-error';
 
 // Re-export frequently-used drivers from the root
 export { default as PlainObjectDriver } from './drivers/plain-object';
