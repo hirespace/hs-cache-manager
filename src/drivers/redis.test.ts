@@ -354,6 +354,40 @@ describe('RedisDriver, against a Redis that does not answer', () => {
     expect(client.quit).toHaveBeenCalledTimes(1);
   });
 
+  /* An open abandoned at its deadline may still finish: the connection it leaves must still be quit. */
+  test('still quits a client whose open finished after the deadline', async () => {
+    const { client, driver, state, connect, COMMAND_DEADLINE_MS, CacheTimeoutError } = await setup({ isOpen: false, isReady: false });
+    connect.mockImplementation(() => new Promise<void>(resolve => {
+      setTimeout(() => {
+        state.isOpen = true;
+        state.isReady = true;
+        resolve();
+      }, COMMAND_DEADLINE_MS + 100);
+    }));
+
+    const outcome = driver.has('foo');
+    await settle();
+    jest.advanceTimersByTime(COMMAND_DEADLINE_MS);
+    await expect(outcome).rejects.toBeInstanceOf(CacheTimeoutError);
+
+    jest.advanceTimersByTime(5_000);
+    expect(client.quit).toHaveBeenCalledTimes(1);
+  });
+
+  test('reports a quit that fails rather than leaving its rejection unhandled', async () => {
+    const { client, driver, exists } = await setup({ isOpen: true, isReady: true });
+    exists.mockResolvedValue(1);
+    const failure = new Error('ERR quit refused');
+    jest.spyOn(client, 'quit').mockRejectedValue(failure);
+    const logged = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    await driver.has('foo');
+    jest.advanceTimersByTime(5_000);
+    await settle();
+
+    expect(logged).toHaveBeenCalledWith('Cache could not quit the idle client', failure);
+  });
+
   /* `get` runs `has` inside its own connect: two arms must leave one timer, not an orphan. */
   test('leaves a single idle timer after a nested read', async () => {
     const { client, driver } = await setup({ isOpen: true, isReady: true });

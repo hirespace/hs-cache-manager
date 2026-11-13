@@ -105,16 +105,18 @@ export default class RedisDriver<Client extends ReturnType<typeof createClient>>
    * A command that missed its deadline is NOT sent again. It may still reach Redis, and repeating
    * an `INCRBY` or a `SET` that landed would count or write it twice.
    *
-   * The idle disconnect is armed however the command ends, so a command that timed out or failed
-   * does not leave an idle connection, which nothing would otherwise close, holding the process open.
-   * node-redis sends `QUIT` after the commands already queued, so the abandoned one still finishes first.
+   * The idle disconnect is armed however the call ends, including an open or a command that timed
+   * out or failed, so neither leaves an idle connection, which nothing would otherwise close, holding
+   * the process open. An open abandoned at its deadline may still complete afterwards; if it is still
+   * connecting when the timer fires, node-redis queues the `QUIT` and sends it once connected. It
+   * sends `QUIT` after the commands already queued, so an abandoned command still finishes first.
    */
   private async connect<T>(callback: () => T): Promise<T> {
     clearTimeout(this.timer);
 
-    await this.open();
-
     try {
+      await this.open();
+
       return await withinDeadline(Promise.resolve().then(callback), 'waiting for a command', COMMAND_DEADLINE_MS);
     } finally {
       this.initDisconnect();
@@ -169,7 +171,11 @@ export default class RedisDriver<Client extends ReturnType<typeof createClient>>
     this.timer = setTimeout(() => {
       if (this.store.isOpen) {
         try {
-          this.store.quit();
+          // `quit` answers with a promise: a client closed under it rejects there rather than throwing,
+          // and a rejection nothing handles would end the process under Node's default.
+          void Promise.resolve(this.store.quit()).catch((e: unknown) => {
+            if (!(e instanceof ClientClosedError)) console.error('Cache could not quit the idle client', e);
+          });
         } catch (e) {
           if (e instanceof ClientClosedError) return;
 
