@@ -35,19 +35,18 @@ export default class RedisDriver<Client extends ReturnType<typeof createClient>>
   public async get<T, U extends T = T>(key: string | number, fallback: T): Promise<U>;
   public async get<T, U extends T = T>(key: string | number, fallback: () => T): Promise<U>;
   public async get<T>(key: string | number, fallback: T = null as unknown as T) {
-    return this.connect(async () => {
-      if (await this.has(key)) {
-        const cache = await this.store.get(this.key(key));
+    // Only the Redis reads are timed: the fallback is the caller's own work, and may rightly take longer.
+    const found = await this.connect(async () => (
+      await this.has(key) ? { cache: await this.store.get(this.key(key)) } : null
+    ));
 
-        try {
-          return JSON.parse(cache!);
-        } catch (error) {
-          return cache;
-        }
-      }
+    if (!found) return valueOf(fallback);
 
-      return valueOf(fallback);
-    });
+    try {
+      return JSON.parse(found.cache!);
+    } catch (error) {
+      return found.cache;
+    }
   }
 
   public async getMany<T = any>(keys: string[] | number[], fallback: T[] = []): Promise<T[]> {
@@ -105,17 +104,21 @@ export default class RedisDriver<Client extends ReturnType<typeof createClient>>
    *
    * A command that missed its deadline is NOT sent again. It may still reach Redis, and repeating
    * an `INCRBY` or a `SET` that landed would count or write it twice.
+   *
+   * The idle disconnect is armed however the command ends, so a command that timed out or failed
+   * does not leave an idle connection, which nothing would otherwise close, holding the process open.
+   * node-redis sends `QUIT` after the commands already queued, so the abandoned one still finishes first.
    */
   private async connect<T>(callback: () => T): Promise<T> {
     clearTimeout(this.timer);
 
     await this.open();
 
-    const result = await withinDeadline(Promise.resolve().then(callback), 'waiting for a command', COMMAND_DEADLINE_MS);
-
-    this.initDisconnect();
-
-    return result;
+    try {
+      return await withinDeadline(Promise.resolve().then(callback), 'waiting for a command', COMMAND_DEADLINE_MS);
+    } finally {
+      this.initDisconnect();
+    }
   }
 
   /**
@@ -161,6 +164,8 @@ export default class RedisDriver<Client extends ReturnType<typeof createClient>>
   }
 
   private initDisconnect() {
+    // A nested call (`get` runs `has`) arms this twice; an orphaned timer would quit a socket still in use.
+    clearTimeout(this.timer);
     this.timer = setTimeout(() => {
       if (this.store.isOpen) {
         try {

@@ -240,7 +240,7 @@ describe('RedisDriver, against a Redis that does not answer', () => {
 
   /* Lets the awaits between the steps of `connect` run, which fake timers do not advance. */
   const settle = async () => {
-    for (let turn = 0; turn < 10; turn += 1) await Promise.resolve();
+    for (let turn = 0; turn < 50; turn += 1) await Promise.resolve();
   };
 
   const setup = async ({ isOpen, isReady }: { isOpen: boolean; isReady: boolean }) => {
@@ -325,6 +325,43 @@ describe('RedisDriver, against a Redis that does not answer', () => {
 
     await expect(outcome).rejects.toBeInstanceOf(CacheTimeoutError);
     expect(incrBy).toHaveBeenCalledTimes(1);
+  });
+
+  /* The fallback is the caller's own work, not a Redis command, so the deadline must not cut it short. */
+  test('lets a slow fallback for a missing key take as long as it needs', async () => {
+    const { driver, exists, COMMAND_DEADLINE_MS } = await setup({ isOpen: true, isReady: true });
+    exists.mockResolvedValue(0);
+    const fallback = () => new Promise<string>(resolve => { setTimeout(() => resolve('computed'), COMMAND_DEADLINE_MS + 100); });
+
+    const outcome = driver.get('foo', fallback);
+    await settle();
+    jest.advanceTimersByTime(COMMAND_DEADLINE_MS + 100);
+
+    await expect(outcome).resolves.toBe('computed');
+  });
+
+  /* Otherwise a command that timed out leaves an idle connection nothing ever closes. */
+  test('still quits the idle client after a command that timed out', async () => {
+    const { client, driver, COMMAND_DEADLINE_MS, CacheTimeoutError } = await setup({ isOpen: true, isReady: true });
+    jest.spyOn(client, 'exists').mockImplementation(never);
+
+    const outcome = driver.has('foo');
+    await settle();
+    jest.advanceTimersByTime(COMMAND_DEADLINE_MS);
+    await expect(outcome).rejects.toBeInstanceOf(CacheTimeoutError);
+
+    jest.advanceTimersByTime(5_000);
+    expect(client.quit).toHaveBeenCalledTimes(1);
+  });
+
+  /* `get` runs `has` inside its own connect: two arms must leave one timer, not an orphan. */
+  test('leaves a single idle timer after a nested read', async () => {
+    const { client, driver } = await setup({ isOpen: true, isReady: true });
+    jest.spyOn(client, 'exists').mockResolvedValue(1);
+    jest.spyOn(client, 'get').mockResolvedValue(JSON.stringify('bar'));
+
+    await expect(driver.get('foo')).resolves.toBe('bar');
+    expect(jest.getTimerCount()).toBe(1);
   });
 
   test('takes an answer that arrives just inside the deadline', async () => {
